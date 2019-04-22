@@ -1,60 +1,62 @@
-# gpt-2
+## Brief
+Fork of GPT-2-117M to run a telegram.me bot or to communicate with the current bot. This repository is meant to be a starting point for researchers and engineers to experiment with GPT-2-117M.  While GPT-2-117M is less proficient than GPT-2-1.5B, it is useful for a wide range of research and applications which could also apply to larger models.
 
-Code and samples from the paper ["Language Models are Unsupervised Multitask Learners"](https://d4mucfpksywv.cloudfront.net/better-language-models/language-models.pdf).
+## To contact the bot:
+Follow this link:
+http://telegram.me/gpt2gpubot
 
-For now, we have only released a smaller (117M parameter) version of GPT-2.
+## To set the bot up yourself:
+(You will require Ubuntu 18.04 LTS.)
 
-See more details in our [blog post](https://blog.openai.com/better-language-models/).
-
-## Usage
-
-This repository is meant to be a starting point for researchers and engineers to experiment with GPT-2-117M.  While GPT-2-117M is less proficient than GPT-2-1.5B, it is useful for a wide range of research and applications which could also apply to larger models.
-
-### Some caveats
-
-- GPT-2-117M robustness and worst case behaviors are not well-understood.  As with any machine-learned model, carefully evaluate GPT-2-117M for your use case, especially if used without fine-tuning or in safety-critical applications where reliability is important.
-- The dataset our GPT-2-117M was trained on contains many texts with [biases](https://twitter.com/TomerUllman/status/1101485289720242177) and factual inaccuracies, and thus GPT-2-117M is likely to be biased and inaccurate as well.
-- To avoid having samples mistaken as human-written, we recommend clearly labeling samples as synthetic before wide dissemination.  Our models are often incoherent or inaccurate in subtle ways, which takes more than a quick read for a human to notice.
-
-### Work with us
-
-Please [let us know](mailto:languagequestions@openai.com) if you’re doing interesting research with or working on applications of GPT-2-117M!  We’re especially interested in hearing from and potentially working with those who are studying
-- Potential malicious use cases and defenses against them (e.g. the detectability of synthetic text)
-- The extent of problematic content (e.g. bias) being baked into the models and effective mitigations
-
-## Development
-
-See [DEVELOPERS.md](./DEVELOPERS.md)
-
-## Contributors
-
-See [CONTRIBUTORS.md](./CONTRIBUTORS.md)
-
-## GPT-2 samples
-
-| WARNING: Samples are unfiltered and may contain offensive content. |
-| --- |
-
-While we have not yet released GPT-2 itself, you can see some samples from it in the `gpt-2-samples` folder.
-We show unconditional samples with default settings (temperature 1 and no truncation), with temperature 0.7, and with truncation with top_k 40.
-We show conditional samples, with contexts drawn from `WebText`'s test set, with default settings (temperature 1 and no truncation), with temperature 0.7, and with truncation with top_k 40.
-
-## Citation
-
-Please use the following bibtex entry:
+Install docker for nvidia:
 ```
-@article{radford2019language,
-  title={Language Models are Unsupervised Multitask Learners},
-  author={Radford, Alec and Wu, Jeff and Child, Rewon and Luan, David and Amodei, Dario and Sutskever, Ilya},
-  year={2019}
-}
+# Install Docker CE + nvidia-docker version 2.0
+sudo apt-get remove -y docker docker-engine docker.io \
+    && sudo apt-get update \
+    && sudo apt-get install -y apt-transport-https ca-certificates curl software-properties-common \
+    &&  curl -fsSL 'https://download.docker.com/linux/ubuntu/gpg' | sudo apt-key add - \
+    && sudo add-apt-repository \
+    "deb [arch=amd64] https://download.docker.com/linux/ubuntu  $(lsb_release -cs) stable" \
+    && sudo apt-get update \
+    && sudo apt-get install -y docker-ce \
+    && sudo docker run hello-world \
+    && sudo docker volume ls -q -f driver=nvidia-docker \
+    | xargs -r -I{} -n1 docker ps -q -a -f volume={} \
+    | xargs -r docker rm -f \
+    && sudo apt-get purge -y nvidia-docker || true \
+    && curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | sudo apt-key add - \
+    && curl -s -L "https://nvidia.github.io/nvidia-docker/$(. /etc/os-release; echo $ID$VERSION_ID)/nvidia-docker.list" \
+    | sudo tee /etc/apt/sources.list.d/nvidia-docker.list \
+    && sudo apt-get update \
+    && sudo apt-get install -y nvidia-docker2 \
+    && sudo pkill -SIGKILL dockerd \
+    && sudo docker run --runtime=nvidia --rm nvidia/cuda:9.0-base nvidia-smi \
+    && echo Docker CE and nvidia-docker successfully installed.
 ```
+Install git and git-clone:
+```
+sudo apt install git
+git clone https://github.com/SendingAFax/gpt-2-telegram.git
+```
+Contact @botfather and get a bot key put this key in place of BOTKEY in src/meow.py
+Edit the settings as you wish, then build the docker container:
+```
+cd gpt-2-telegram/
+sudo docker build -t gpt-nvidia -f Dockerfile.gpu .
+```
+Run the docker container:
+```
+sudo docker run --runtime=nvidia --net=host -t gpt-nvidia
+```
+Follow the URL to the jupyter web interface from the docker window, then click New -> Terminal.
+Type the following:
 
-## Future work
+```
+src/meow.py
+```
+Your bot should now be running.
 
-We may release code for evaluating the models on various benchmarks.
-
-We are still considering release of the larger models.
+Have fun!
 
 ## License
 
