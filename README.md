@@ -3,9 +3,9 @@ Fork of GPT-2-117M to run a telegram.me bot or to communicate with the current b
 
 ## To contact the bot:
 Follow this link:
-http://telegram.me/gpt2gpubot
+http://telegram.me/gpt2cpubot
 
-## To set the bot up yourself:
+## To set the bot up yourself with nvidia:
 (You will require Ubuntu 18.04 LTS.)
 
 Install docker for nvidia:
