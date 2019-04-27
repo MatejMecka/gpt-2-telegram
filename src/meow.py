@@ -10,15 +10,14 @@ import model, sample, encoder
 
 
 import logging
-import telegram
 from time import sleep
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 from telegram.error import NetworkError, Unauthorized
-
 update_id = None
 
 def interact_model(
     model_name='117M',
-    seed=2417389065,
+    seed=None
     nsamples=1,
     batch_size=1,
     length=None,
@@ -72,48 +71,38 @@ def interact_model(
         ckpt = tf.train.latest_checkpoint(os.path.join('models', model_name))
         saver.restore(sess, ckpt)
         print('Loading bot...')
-        global update_id
     # Telegram Bot Authorization Token
-        bot = telegram.Bot('BOTKEY')
-
-    # get the first pending update_id, this is so we can skip over it in case
+    # get the frst pending update_id, this is so we can skip over it in case
     # we get an "Unauthorized" exception.
-        try:
-            update_id = bot.get_updates()[0].update_id
-        except IndexError:
-            update_id = None
-
         logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         print('LOADED')
-        def echo(bot):
-            global update_id
-            # Request updates after the last update_id
-            for update in bot.get_updates(offset=update_id, timeout=10):
-                update_id = update.update_id + 1
+        def echo(bot, update):
+            print(update.message.text)
+            raw_text = update.message.text
+            context_tokens = enc.encode(raw_text)
+            generated = 0
+            for _ in range(nsamples // batch_size):
+                out = sess.run(output, feed_dict={
+                    context: [context_tokens for _ in range(batch_size)]
+                })[:, len(context_tokens):]
+                for i in range(batch_size):
+                    generated += 1
+                    story = enc.decode(out[i])
+                    bot.send_message(chat_id=update.message.chat_id, text=story)
+                    print(story)
 
-                if update.message.text:
-                    print(update.message.text)
-                    raw_text = update.message.text
-                    context_tokens = enc.encode(raw_text)
-                    generated = 0
-                    for _ in range(nsamples // batch_size):
-                        out = sess.run(output, feed_dict={
-                            context: [context_tokens for _ in range(batch_size)]
-                        })[:, len(context_tokens):]
-                        for i in range(batch_size):
-                            generated += 1
-                            text = enc.decode(out[i])
-                            update.message.reply_text(text)
-
-        while True:
-            try:
-                echo(bot)
-            except NetworkError:
-                sleep(1)
-            except Unauthorized:
-                # The user has removed or blocked the bot.
-                update_id += 1
-
+        def runrunrun(bot, update):
+            bot.send_message(chat_id=update.message.chat_id, text='Type a message to begin...')
+        def error():
+            pass
+        updater = Updater("BOTKEY")
+        dp = updater.dispatcher
+        dp.add_error_handler(error)
+        dp.add_handler(CommandHandler('start', runrunrun))
+        dp.add_handler(MessageHandler(Filters.text, echo))
+        updater.start_polling()
+        updater.idle()
 
 if __name__ == '__main__':
     fire.Fire(interact_model)
+
