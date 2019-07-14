@@ -17,7 +17,7 @@ update_id = None
 
 def interact_model(
     model_name='117M',
-    seed=None
+    seed=None,
     nsamples=1,
     batch_size=1,
     length=None,
